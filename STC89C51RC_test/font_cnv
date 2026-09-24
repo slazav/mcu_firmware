@@ -1,0 +1,46 @@
+#!/usr/bin/perl
+
+my @buf;
+
+die "usage: $0 <txt file>\n" if $#ARGV!=0;
+my $fname = $ARGV[0];
+
+open IN, $fname or die "can't open $fname; $!\n";
+
+my $struct_name = $fname;
+$struct_name =~ s/.txt$//;
+
+
+my @data;
+
+while (<IN>){
+  chomp;
+  next if /^\s*$/;
+  next if /^#/ ;
+
+  die "bad line count ($_, $#buf)" if /^[0-9]/ && $#buf!=-1;
+  next if /^[0-9]/;
+  push @buf, $_;
+
+  next if $#buf!=7;
+
+  my @d;
+  #print("{");
+  for (my $i = 0; $i<8; $i++){
+    my $v = 0;
+    for (my $j = 7; $j>=0; $j--){
+      $v <<= 1;
+      $v++ if (length($buf[$j])>$i && substr($buf[$j], $i, 1) ne '.');
+    }
+    push @d, sprintf("0x%02x", $v);
+  }
+  push @data, '{' . join(',', @d) . '}';
+  @buf = ();
+}
+
+
+my $n = $#data+1;
+print "// Generated with font_cnv script\n";
+print "__code const char display_${struct_name}[$n][8] = {\n";
+print join(",\n", @data);
+print("};\n");
