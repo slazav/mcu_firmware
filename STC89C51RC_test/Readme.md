@@ -61,3 +61,46 @@ The argument can contain spaces, but all spaces in the beginning are eaten, use 
 * `bmp280_init` -- init BMP device (fixed configuration with maximum sampling)
 * `bmp280_cal` -- get calibration data (T1..T3, P1..P9)
 * `bmp280_meas` -- get raw data for temperature and pressure
+
+
+#### Integration with udev and device2
+
+My board uses CH340 serial converter which does not have unique ID. To
+distinguish it from my other devices with the same chip I'm using
+`device_ping` tool from my device2 package (https://github.com/slazav/device2).
+
+udev rule:
+```
+#1a86:7523 QinHeng Electronics CH340 serial converter (STC89 mcu)
+ACTION=="add", SUBSYSTEM=="tty",\
+   ATTRS{idVendor}=="1a86", ATTRS{idProduct}=="7523",\
+   PROGRAM+="/etc/udev/ping_stc89 %k",\
+   GROUP="users", MODE="0660", SYMLINK+="stc89"
+```
+
+Script `/etc/udev/ping_stc89`:
+
+```
+#!/bin/sh
+
+device_ping serial -dev "/dev/$1" -speed 4800 -parity 8N1 -sfc 0\
+  -vmin 1 -timeout 10 -add_str "\n" -trim_str "\n" -spp 1\
+  -- ""
+
+device_ping serial -dev "/dev/$1" -speed 4800 -parity 8N1 -sfc 0\
+  -vmin 1 -timeout 10 -add_str "\n" -trim_str "\n" -spp 1\
+  -- "*idn?" | grep -q "^STC89"
+
+```
+
+Here the serial port is configured, *idn? command is sent to the device,
+the answer affects the return code. Unfortunately, I can not avoid
+power-up garbage in UART, so I'm sending one more command to neutralize
+it.
+
+Configuration in `/etc/device2/devices.cfg`:
+```
+stc  serial -dev "/dev/stc89" -speed 4800 -parity 8N1 -sfc 0\
+  -ndelay 0 -raw 1 -vmin 1 -add_str "\n" -trim_str "\n" -spp 1
+```
+
