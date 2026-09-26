@@ -20,7 +20,7 @@ by defining flags in main.c:
 - TIMER -- timer subsystem: 1ms timer interrupt
 - UART -- uart subsystem
 - I2C - i2c subsystem
-- DISPLAY - display subsystem (needs I2C)
+- DISPLAY - display subsystem for SSD1306-based 128x32 OLED screen (needs I2C)
 - FONT_ASCII7 - ASCII7 font for display (0x20..0x7F, 96 chars, 768 bytes)
 - FONT_KOI8_R - KOI8_R font for display (0xC0..0xFF, 64 chars, 512 bytes)
 - BMP280 -- basic commands for bmp280 pressure/temperature sensor
